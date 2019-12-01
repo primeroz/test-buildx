@@ -1,0 +1,73 @@
+version: '2'
+
+tasks:
+  binfmt:
+    cmds:
+      - docker run --rm --privileged docker/binfmt:{{ .BINFMTSHA }}
+      - docker buildx rm mybuilder
+      - docker buildx create --name mybuilder
+      - docker buildx use mybuilder
+    vars:
+      BINFMTSHA: 66f9012c56a8316f9244ffd7622d7c21c1f6f28d
+
+  buildx:
+    cmds:
+      - cd {{ .DIR }} && docker buildx build --platform linux/{{ .ARCH }} -f Dockerfile {{ .BUILD_ARGS }} --progress=plain --output=type=docker,dest=../output/{{ .DIR }}-{{ .VERSION }}-{{ .ARCH | replace "/" "_" }}.tar -t test/multiarch-{{ .DIR }}:{{ .TAG }} .
+
+  bitcoind:
+    desc: Build BitcoinD images
+    vars:
+      DIR: "bitcoind"
+      VERSION: "0.19.0.1"
+      TAG: "0.19.0.1-rc0"
+    cmds:
+      - task: buildx
+        vars: 
+          ARCH: "amd64"
+          DIR: "{{ .DIR }}"
+          VERSION: "{{ .VERSION }}"
+          TAG: "{{ .TAG }}"
+          BUILD_ARGS: "--build-arg BITCOIND_VERSION={{ .VERSION }} --build-arg BIN_ARG_SUFFIX=x86_64-linux-gnu"
+      - task: buildx
+        vars:
+          ARCH: "arm64"
+          DIR: "{{ .DIR }}"
+          VERSION: "{{ .VERSION }}"
+          TAG: "{{ .TAG }}"
+          BUILD_ARGS: "--build-arg BITCOIND_VERSION={{ .VERSION }} --build-arg BIN_ARG_SUFFIX=aarch64-linux-gnu"
+      - task: buildx
+        vars:
+          ARCH: "arm/v7"
+          DIR: "{{ .DIR }}"
+          VERSION: "{{ .VERSION }}"
+          TAG: "{{ .TAG }}"
+          BUILD_ARGS: "--build-arg BITCOIND_VERSION={{ .VERSION }} --build-arg BIN_ARG_SUFFIX=arm-linux-gnueabihf"
+
+  electrs:
+    desc: Build Electrs images
+    vars:
+      DIR: "electrs"
+      VERSION: "v0.8.1"
+      TAG: "0.8.1-rc0"
+    cmds:
+      - task: buildx
+        vars: 
+          ARCH: "amd64"
+          DIR: "{{ .DIR }}"
+          VERSION: "{{ .VERSION }}"
+          TAG: "{{ .TAG }}"
+          BUILD_ARGS: "--build-arg electrs_version={{ .VERSION }}"
+      - task: buildx
+        vars:
+          ARCH: "arm64"
+          DIR: "{{ .DIR }}"
+          VERSION: "{{ .VERSION }}"
+          TAG: "{{ .TAG }}"
+          BUILD_ARGS: "--build-arg electrs_version={{ .VERSION }}"
+      - task: buildx
+        vars:
+          ARCH: "arm/v7"
+          DIR: "{{ .DIR }}"
+          VERSION: "{{ .VERSION }}"
+          TAG: "{{ .TAG }}"
+          BUILD_ARGS: "--build-arg electrs_version={{ .VERSION }}"
