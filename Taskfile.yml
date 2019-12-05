@@ -2,72 +2,125 @@ version: '2'
 
 tasks:
   binfmt:
+    desc: Setup Binfmt and buildx mybuilder
     cmds:
       - docker run --rm --privileged docker/binfmt:{{ .BINFMTSHA }}
-      - docker buildx rm mybuilder
+      - mkdir -p $HOME/.docker/cli-plugins/
+      - curl -Lo $HOME/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.3.1/buildx-v0.3.1.linux-amd64
+      - chmod a+x $HOME/.docker/cli-plugins/docker-buildx
       - docker buildx create --name mybuilder
       - docker buildx use mybuilder
-    vars:
-      BINFMTSHA: 66f9012c56a8316f9244ffd7622d7c21c1f6f28d
+      - mkdir -p ./output
+
+  cleanup:
+    desc: Cleanup buildx mybuilder
+    cmds:
+      - docker buildx rm mybuilder
 
   buildx:
     cmds:
-      - cd {{ .DIR }} && docker buildx build --platform linux/{{ .ARCH }} -f Dockerfile {{ .BUILD_ARGS }} --progress=plain --output=type=docker,dest=../output/{{ .DIR }}-{{ .VERSION }}-{{ .ARCH | replace "/" "_" }}.tar -t test/multiarch-{{ .DIR }}:{{ .TAG }} .
+      - cd {{ .DIR }} && docker buildx build --platform linux/{{ .ARCH }} -f Dockerfile {{ .BUILD_ARGS }} --build-arg DEBIANTAG={{ .DEBIANTAG }} --progress=plain --output=type=docker,dest=../output/{{ .DIR }}-{{ .TAG }}-{{ .ARCH | replace "/" "_" }}.tar -t test/multiarch-{{ .DIR }}:{{ .TAG }} .
+    status:
+      - test -f output/{{ .DIR }}-{{ .TAG }}-{{ .ARCH | replace "/" "_" }}.tar
+
+  bitcoind-amd64:
+    desc: Build BitcoinD images - AMD64 platform
+    cmds:
+      - task: buildx
+        vars: 
+          ARCH: "amd64"
+          DIR: "{{ .BITCOIND_DIR }}"
+          VERSION: "{{ .BITCOIND_VERSION }}"
+          TAG: "{{ .BITCOIND_TAG }}"
+          BUILD_ARGS: "--build-arg BITCOIND_VERSION={{ .BITCOIND_VERSION }} --build-arg BIN_ARG_SUFFIX=x86_64-linux-gnu"
+
+  bitcoind-arm64:
+    desc: Build BitcoinD images - ARM64 platform
+    cmds:
+      - task: buildx
+        vars:
+          ARCH: "arm64"
+          DIR: "{{ .BITCOIND_DIR }}"
+          VERSION: "{{ .BITCOIND_VERSION }}"
+          TAG: "{{ .BITCOIND_TAG }}"
+          BUILD_ARGS: "--build-arg BITCOIND_VERSION={{ .BITCOIND_VERSION }} --build-arg BIN_ARG_SUFFIX=aarch64-linux-gnu"
+
+
+  bitcoind-armv7:
+    desc: Build BitcoinD images - ARM/V7 platform
+    cmds:
+      - task: buildx
+        vars:
+          ARCH: "arm/v7"
+          DIR: "{{ .BITCOIND_DIR }}"
+          VERSION: "{{ .BITCOIND_VERSION }}"
+          TAG: "{{ .BITCOIND_TAG }}"
+          BUILD_ARGS: "--build-arg BITCOIND_VERSION={{ .BITCOIND_VERSION }} --build-arg BIN_ARG_SUFFIX=arm-linux-gnueabihf"
+
+  electrs-amd64:
+    desc: Build Electrs images - AMD64 platform
+    cmds:
+      - task: buildx
+        vars: 
+          ARCH: "amd64"
+          DIR: "{{ .ELECTRS_DIR }}"
+          VERSION: "{{ .ELECTRS_VERSION }}"
+          TAG: "{{ .ELECTRS_TAG }}"
+          BUILD_ARGS: "--build-arg electrs_version={{ .ELECTRS_VERSION }}"
+
+  electrs-arm64:
+    desc: Build Electrs images - ARM64 platform
+    cmds:
+      - task: buildx
+        vars:
+          ARCH: "arm64"
+          DIR: "{{ .ELECTRS_DIR }}"
+          VERSION: "{{ .ELECTRS_VERSION }}"
+          TAG: "{{ .ELECTRS_TAG }}"
+          BUILD_ARGS: "--build-arg electrs_version={{ .ELECTRS_VERSION }}"
+
+  electrs-armv7:
+    desc: Build Electrs images - ARM/V7 platform
+    cmds:
+      - task: buildx
+        vars:
+          ARCH: "arm/v7"
+          DIR: "{{ .ELECTRS_DIR }}"
+          VERSION: "{{ .ELECTRS_VERSION }}"
+          TAG: "{{ .ELECTRS_TAG }}"
+          BUILD_ARGS: "--build-arg electrs_version={{ .ELECTRS_VERSION }}"
 
   bitcoind:
-    desc: Build BitcoinD images
-    vars:
-      DIR: "bitcoind"
-      VERSION: "0.19.0.1"
-      TAG: "0.19.0.1-rc0"
+    desc: Build BitcoinD images - All Platform
     cmds:
-      - task: buildx
-        vars: 
-          ARCH: "amd64"
-          DIR: "{{ .DIR }}"
-          VERSION: "{{ .VERSION }}"
-          TAG: "{{ .TAG }}"
-          BUILD_ARGS: "--build-arg BITCOIND_VERSION={{ .VERSION }} --build-arg BIN_ARG_SUFFIX=x86_64-linux-gnu"
-      - task: buildx
-        vars:
-          ARCH: "arm64"
-          DIR: "{{ .DIR }}"
-          VERSION: "{{ .VERSION }}"
-          TAG: "{{ .TAG }}"
-          BUILD_ARGS: "--build-arg BITCOIND_VERSION={{ .VERSION }} --build-arg BIN_ARG_SUFFIX=aarch64-linux-gnu"
-      - task: buildx
-        vars:
-          ARCH: "arm/v7"
-          DIR: "{{ .DIR }}"
-          VERSION: "{{ .VERSION }}"
-          TAG: "{{ .TAG }}"
-          BUILD_ARGS: "--build-arg BITCOIND_VERSION={{ .VERSION }} --build-arg BIN_ARG_SUFFIX=arm-linux-gnueabihf"
+      - task: bitcoind-amd64
+      - task: bitcoind-arm64
+      - task: bitcoind-armv7
 
   electrs:
-    desc: Build Electrs images
-    vars:
-      DIR: "electrs"
-      VERSION: "v0.8.1"
-      TAG: "0.8.1-rc0"
+    desc: Build Electrs images - All Platform
     cmds:
-      - task: buildx
-        vars: 
-          ARCH: "amd64"
-          DIR: "{{ .DIR }}"
-          VERSION: "{{ .VERSION }}"
-          TAG: "{{ .TAG }}"
-          BUILD_ARGS: "--build-arg electrs_version={{ .VERSION }}"
-      - task: buildx
-        vars:
-          ARCH: "arm64"
-          DIR: "{{ .DIR }}"
-          VERSION: "{{ .VERSION }}"
-          TAG: "{{ .TAG }}"
-          BUILD_ARGS: "--build-arg electrs_version={{ .VERSION }}"
-      - task: buildx
-        vars:
-          ARCH: "arm/v7"
-          DIR: "{{ .DIR }}"
-          VERSION: "{{ .VERSION }}"
-          TAG: "{{ .TAG }}"
-          BUILD_ARGS: "--build-arg electrs_version={{ .VERSION }}"
+      - task: electrs-amd64
+      - task: electrs-arm64
+      - task: electrs-armv7
+
+  amd64:
+    desc: Build AMD64 images
+    cmds:
+      - task: bitcoind-amd64
+      - task: electrs-amd64
+
+
+  arm64:
+    desc: Build ARM64 images
+    cmds:
+      - task: bitcoind-arm64
+      - task: electrs-arm64
+
+
+  armv7:
+    desc: Build ARM/V7 images
+    cmds:
+      - task: bitcoind-armv7
+      - task: electrs-armv7
+

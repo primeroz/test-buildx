@@ -1,7 +1,8 @@
-FROM rust:1.34.0-slim as BUILD
-#FROM --platform=$TARGETPLATFORM rust:1.34.0-slim
+ARG DEBIANTAG
 
-ARG     electrs_version
+FROM rust:1.34.0-slim as BUILD
+
+ARG  electrs_version
 
 RUN apt-get update \
     && apt-get upgrade -y \
@@ -15,7 +16,7 @@ RUN apt-get update \
     && apt-get clean all \
     && rm -rf /usr/local/src/electrs
 
-FROM debian:stretch-slim
+FROM debian:${DEBIANTAG}
 
 COPY --from=BUILD /usr/local/cargo/bin/electrs /usr/local/bin/electrs
 

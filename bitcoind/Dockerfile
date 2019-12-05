@@ -1,7 +1,8 @@
-FROM debian:stable-slim
+ARG DEBIANTAG
 
+FROM debian:${DEBIANTAG}
 
-LABEL maintainer.0="prz"
+LABEL maintainer.0="bigfreeze"
 
 RUN useradd -r bitcoin \
   && apt-get update -y \
