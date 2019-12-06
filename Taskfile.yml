@@ -90,6 +90,43 @@ tasks:
           TAG: "{{ .ELECTRS_TAG }}"
           BUILD_ARGS: "--build-arg electrs_version={{ .ELECTRS_VERSION }}"
 
+  tor-amd64:
+    desc: Build Tor images - AMD64 platform
+    cmds:
+      - task: buildx
+        vars: 
+          ARCH: "amd64"
+          DIR: "{{ .TOR_DIR }}"
+          VERSION: "{{ .TOR_VERSION }}"
+          TAG: "{{ .TOR_TAG }}"
+          BUILD_ARGS: "--build-arg tor_version={{ .TOR_VERSION }}"
+
+  tor-arm64:
+    desc: Build Tor images - ARM64 platform
+    cmds:
+      - task: buildx
+        vars:
+          ARCH: "arm64"
+          DIR: "{{ .TOR_DIR }}"
+          VERSION: "{{ .TOR_VERSION }}"
+          TAG: "{{ .TOR_TAG }}"
+          BUILD_ARGS: "--build-arg tor_version={{ .TOR_VERSION }}"
+
+  tor-armv7:
+    desc: Build Tor images - ARM/V7 platform
+    cmds:
+      - task: buildx
+        vars:
+          ARCH: "arm/v7"
+          DIR: "{{ .TOR_DIR }}"
+          VERSION: "{{ .TOR_VERSION }}"
+          TAG: "{{ .TOR_TAG }}"
+          BUILD_ARGS: "--build-arg tor_version={{ .TOR_VERSION }}"
+
+
+
+
+
   bitcoind:
     desc: Build BitcoinD images - All Platform
     cmds:
@@ -104,11 +141,20 @@ tasks:
       - task: electrs-arm64
       - task: electrs-armv7
 
+  tor:
+    desc: Build Tor images - All Platform
+    cmds:
+      - task: tor-amd64
+      - task: tor-arm64
+      - task: tor-armv7
+
+
   amd64:
     desc: Build AMD64 images
     cmds:
       - task: bitcoind-amd64
       - task: electrs-amd64
+      - task: tor-amd64
 
 
   arm64:
@@ -116,6 +162,7 @@ tasks:
     cmds:
       - task: bitcoind-arm64
       - task: electrs-arm64
+      - task: tor-arm64
 
 
   armv7:
@@ -123,4 +170,5 @@ tasks:
     cmds:
       - task: bitcoind-armv7
       - task: electrs-armv7
+      - task: tor-armv7
 
