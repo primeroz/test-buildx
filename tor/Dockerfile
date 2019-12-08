@@ -1,40 +1,62 @@
-FROM alpine:3.10
+ARG DEBIANTAG
+FROM debian:${DEBIANTAG}
+MAINTAINER "bigfreeze"
 
-ARG     tor_version
+ENV GPGKEY=A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89
+ENV APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE="True"
+ENV DEBIAN_FRONTEND=noninteractive
 
-ENV     HOME /var/lib/tor
+# Set a default Nickname
+ENV TOR_NICKNAME=Tor4
+ENV TOR_USER=tord
+ENV TERM=xterm
 
-RUN     apk add --no-cache git libevent-dev openssl-dev gcc make automake ca-certificates autoconf musl-dev coreutils zlib-dev zstd-dev xz-dev && \
-    mkdir -p /usr/local/src/ && \
-    git clone https://git.torproject.org/tor.git /usr/local/src/tor && \
-    cd /usr/local/src/tor && \
-    git checkout tor-$tor_version && \
-    ./autogen.sh && \
-    ./configure \
-    --disable-asciidoc \
-    --sysconfdir=/etc \
-    --disable-unittests && \
-    make && make install && \
-    cd .. && \
-    rm -rf tor && \
-    apk del -f git libevent-dev openssl-dev make automake autoconf musl-dev coreutils zstd-dev xz-dev && \
-    apk add --no-cache libevent openssl
+# Install prerequisites
+RUN apt-get update \
+ && apt-get install --no-install-recommends --no-install-suggests -y \
+        apt-transport-https \
+        ca-certificates \
+        dirmngr \
+        apt-utils \
+        gnupg \
+        curl \
+ # Add torproject.org Debian repository for stable Tor version \
+ && curl https://deb.torproject.org/torproject.org/A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89.asc | gpg --import \
+ && gpg --export A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89 | apt-key add - \
+ && echo "deb https://deb.torproject.org/torproject.org buster main"   >  /etc/apt/sources.list.d/tor-apt-sources.list \
+ && echo "deb-src https://deb.torproject.org/torproject.org buster main" >> /etc/apt/sources.list.d/tor-apt-sources.list \
+ # Install tor with GeoIP and obfs4proxy & backup torrc \
+ && apt-get update \
+ && apt-get install --no-install-recommends --no-install-suggests -y \
+        pwgen \
+        iputils-ping \
+        tor \
+        tor-geoipdb \
+        deb.torproject.org-keyring \
+ && mkdir -pv /usr/local/etc/tor/ \
+ && mv -v /etc/tor/torrc /usr/local/etc/tor/torrc.sample \
+ && apt-get purge --auto-remove -y \
+        apt-transport-https \
+        dirmngr \
+        apt-utils \
+        gnupg \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/* \
+ # Rename Debian unprivileged user to tord \
+ && usermod -l tord debian-tor \
+ && groupmod -n tord debian-tor
 
-RUN     mkdir -p /etc/tor/
+# Copy Tor configuration file
+# COPY ./torrc /etc/tor/torrc
 
-#COPY    assets/onions /usr/local/src/onions
-#COPY    assets/torrc /var/local/tor/torrc.tpl
+# Copy docker-entrypoint
+# COPY ./scripts/ /usr/local/bin/
 
+# Persist data
+VOLUME /etc/tor /var/lib/tor
 
-RUN     mkdir -p ${HOME}/.tor && \
-    addgroup -S -g 107 tor && \
-    adduser -S -G tor -u 104 -H -h ${HOME} tor
+# ORPort, DirPort, SocksPort, ObfsproxyPort, MeekPort
+EXPOSE 9001 9030 9050 54444 7002
 
-#COPY    assets/entrypoint-config.yml /
-
-VOLUME  ["/var/lib/tor/hidden_service/"]
-
-# placeholder
-ENTRYPOINT ["sh"]
-
-CMD     ["tor"]
+ENTRYPOINT ["docker-entrypoint"]
+CMD ["tor", "-f", "/etc/tor/torrc"]
