@@ -4,19 +4,17 @@ FROM debian:${DEBIANTAG}
 
 LABEL maintainer.0="bigfreeze"
 
-RUN useradd -r bitcoin \
-  && apt-get update -y \
-  && apt-get install -y curl gnupg gosu ca-certificates \
-  && c_rehash \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
 ARG BITCOIND_VERSION
 ARG BIN_ARG_SUFFIX
 ENV BITCOIN_DATA=/home/bitcoin/.bitcoin
 ENV PATH=/opt/bitcoin-${BITCOIND_VERSION}/bin:$PATH
 
 RUN set -ex \
+  && addgroup --gid 1000 bitcoin \
+  && adduser --disabled-login --system --shell /bin/false --uid 1000 --gid 1000 bitcoin \
+  && apt-get update -y \
+  && apt-get install -y --no-install-recommends --no-install-suggests curl gnupg jq gosu ca-certificates \
+  && c_rehash \
   && for key in \
     01EA5486DE18A882D4C2684590C8019E36C2E964 \
   ; do \
@@ -31,10 +29,19 @@ RUN set -ex \
   && gpg --verify SHA256SUMS.asc \
   && grep " bitcoin-${BITCOIND_VERSION}-${BIN_ARG_SUFFIX}.tar.gz\$" SHA256SUMS.asc | sha256sum -c - \
   && tar -xzf *.tar.gz -C /opt \
-  && rm *.tar.gz *.asc
+  && rm *.tar.gz *.asc \
+  && apt-get purge --auto-remove -y \
+        dirmngr \
+        gnupg \
+        curl \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY docker-entrypoint.sh /entrypoint.sh
 RUN chmod a+x /entrypoint.sh
+
+COPY /docker-entrypoint.d/* /docker-entrypoint.d/
+RUN chmod a+x /docker-entrypoint.d/*
 
 VOLUME ["/home/bitcoin/.bitcoin"]
 

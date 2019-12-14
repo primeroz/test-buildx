@@ -15,6 +15,7 @@ ENV TERM=xterm
 RUN apt-get update \
  && apt-get install --no-install-recommends --no-install-suggests -y \
         apt-transport-https \
+        bash \
         ca-certificates \
         dirmngr \
         apt-utils \
@@ -41,20 +42,26 @@ RUN apt-get update \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* \
  # Rename Debian unprivileged user to tord \
- && usermod -l tord debian-tor \
- && groupmod -n tord debian-tor
+ && usermod -l tord -u 1000 debian-tor \
+ && groupmod -n tord -g 1000 debian-tor
 
-# Copy Tor configuration file
-# COPY ./torrc /etc/tor/torrc
+ENV ETCDIR=/tmp/tor
+ENV DATADIR=/var/lib/tor
+ENV CONTROLDIR=/run/tor
 
-# Copy docker-entrypoint
-# COPY ./scripts/ /usr/local/bin/
+COPY docker-entrypoint.sh /entrypoint.sh
+RUN chmod a+x /entrypoint.sh
+
+COPY /docker-entrypoint.d/* /docker-entrypoint.d/
+RUN chmod a+x /docker-entrypoint.d/*
 
 # Persist data
-VOLUME /etc/tor /var/lib/tor
+# VOLUME /etc/tor /var/lib/tor /run/tor
+VOLUME $DATADIR
 
 # ORPort, DirPort, SocksPort, ObfsproxyPort, MeekPort
-EXPOSE 9001 9030 9050 54444 7002
+#EXPOSE 9001 9030 9050 54444 7002
+EXPOSE 9050 9051
 
-ENTRYPOINT ["docker-entrypoint"]
-CMD ["tor", "-f", "/etc/tor/torrc"]
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["tor", "-f", "${ETCDIR}/torrc"]
