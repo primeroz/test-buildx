@@ -19,6 +19,34 @@ HASHEDPASSWD=${HASHEDPASSWD:-""}
 
 LOGLEVEL=${LOGLEVEL:-notice}
 
+
+
+extract_hidden_services_v2() {
+  local services=()
+  for e in `compgen -e`
+  do
+    if [[ $e =~ ^.+_TOR_SERVICE_VERSION$ ]] && [[ "$(eval echo \${${e}})" == "2" ]]; then
+      services+=($(echo $e|sed -e 's/_TOR_SERVICE_VERSION//'))
+    fi
+  done
+
+  for s in "${services[@]}"
+  do
+    local dir="$DATADIR/hidden_services/$s"
+    local hosts="$(eval echo \${${s}_TOR_SERVICE_HOSTS})"
+    local auth="$(eval echo \${${s}_TOR_SERVICE_AUTH})"
+    if [[ ! "x$(eval echo \${${s}_TOR_SERVICE_HOSTS})" == "x" ]]; then
+      printf "\nHiddenServiceDir $dir" >> $TORRC
+      printf "\nHiddenServicePort $hosts" >> $TORRC
+      printf "\nHiddenServiceVersion 2" >> $TORRC
+      if [[ "x$auth" == "xbasic" ]] || [[ "x$auth" == "xstealth" ]]; then
+        printf "\nHiddenServiceAuthorizeClient $auth client" >> $TORRC
+      fi
+    fi
+  done
+
+}
+
 cat >$TORRC<<EOF
 ## TOR Configuration file
 
@@ -52,19 +80,9 @@ printf "\n### DISABLE SERVICES\n" >> $TORRC
 printf "\nORPort 0\n" >> $TORRC
 printf "\nDirPort 0\n" >> $TORRC
 
-## Once you have configured a hidden service, you can look at the
-## contents of the file ".../hidden_service/hostname" for the address
-## to tell people.
-##
-## HiddenServicePort x y:z says to redirect requests on port x to the
-## address y:z.
-
-#HiddenServiceDir /var/lib/tor/hidden_service/
-#HiddenServicePort 80 127.0.0.1:80
-
-#HiddenServiceDir /var/lib/tor/other_hidden_service/
-#HiddenServicePort 80 127.0.0.1:80
-#HiddenServicePort 22 127.0.0.1:22
+printf "\n ### HIDDEN SERVICES v2" >> $TORRC
+extract_hidden_services_v2
+printf "\n\n### END of config\n" >> $TORRC
 
 chmod 600 $TORRC
 chown tord:tord $TORRC
