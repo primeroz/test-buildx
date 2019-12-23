@@ -2,6 +2,6 @@
 set -e
 
 if [[ -d "$BITCOIN_DATA" ]]; then
-  cmod 750 $BITCOIN_DATA
-  chown -R bitcoin:bictoin $BITCOIN_DATA
+  chmod 750 $BITCOIN_DATA
+  chown -R bitcoin:bitcoin $BITCOIN_DATA
 fi
