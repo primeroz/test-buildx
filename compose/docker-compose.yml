@@ -1,0 +1,66 @@
+version: "3.7"                      
+                                     
+services:        
+  tor:                                                                     
+    image: test/multiarch-tor:0.4.1.6-rc0
+    #build:                 
+      #context: tor                   
+    networks: 
+        node:
+          ipv4_address: 172.28.7.10
+    environment: 
+      # Enable Socks proxy on 9050
+      SOCKSPORT: "9050"
+                                     
+      # Set mapping ports
+      RPC_TOR_SERVICE_HOSTS: "8332 bitcoind:8332"
+      RPC_TOR_SERVICE_VERSION: 2
+      REST_TOR_SERVICE_HOSTS: "8333 bitcoind:8333"
+      REST_TOR_SERVICE_VERSION: 2
+    entrypoint:
+      - /entrypoint.sh
+    command:
+      - tor
+      - -f
+      - /tmp/tor/torrc
+    # Keep keys in volumes
+    volumes:
+      - tor_hidden_services:/var/lib/tor/hidden_service/
+      - tor_run_tor:/run/tor
+
+  bitcoind:      
+    image: test/multiarch-bitcoind:0.19.0.1-rc0
+    #build:
+    #  context: bitcoind
+    depends_on:  
+      - tor  
+    #network_mode: container:tor
+    networks: 
+        node:
+          ipv4_address: 172.28.7.20
+    environment:                                                           
+      BITCOIN_DATA: /home/bitcoin/.bitcoin
+      SOCKSPROXY: "127.0.0.1:9050"
+    #entrypoint: 
+    #  - /wait-for
+    #command: "\"tor:9050\" -- /entrypoint.sh bitcoind"
+    volumes:
+      - bitcoind_data:/home/bitcoin/.bitcoin
+      - tor_run_tor:/run/tor:ro
+
+
+
+volumes:
+  tor_hidden_services:
+    driver: local
+  tor_run_tor:
+    driver: local
+  bitcoind_data:
+    driver: local
+
+networks:
+  node:
+   ipam:
+     config:
+       - subnet: 172.28.7.0/24
+

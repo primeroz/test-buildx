@@ -17,16 +17,23 @@ tasks:
     cmds:
       - docker buildx rm mybuilder
 
-  buildx:
+  buildx-docker:
     cmds:
-      - cd {{ .DIR }} && docker buildx build --platform linux/{{ .ARCH }} -f Dockerfile {{ .BUILD_ARGS }} --build-arg DEBIANTAG={{ .DEBIANTAG }} --progress=plain --output=type=docker,dest=../output/{{ .DIR }}-{{ .TAG }}-{{ .ARCH | replace "/" "_" }}.tar -t test/multiarch-{{ .DIR }}:{{ .TAG }} .
+      - cd {{ .DIR }} && docker buildx build --platform linux/{{ .ARCH }} -f Dockerfile {{ .BUILD_ARGS }} --build-arg DEBIANTAG={{ .DEBIANTAG }} --progress=plain --output=type=docker,dest=../output/docker/{{ .DIR }}-{{ .TAG }}-{{ .ARCH | replace "/" "_" }}.tar -t test/multiarch-{{ .DIR }}:{{ .TAG }} .
     status:
-      - test -f output/{{ .DIR }}-{{ .TAG }}-{{ .ARCH | replace "/" "_" }}.tar
+      - test -f output/docker/{{ .DIR }}-{{ .TAG }}-{{ .ARCH | replace "/" "_" }}.tar
+
+  buildx-tar:
+    cmds:
+      - cd {{ .DIR }} && docker buildx build --platform linux/{{ .ARCH }} -f Dockerfile {{ .BUILD_ARGS }} --build-arg DEBIANTAG={{ .DEBIANTAG }} --progress=plain --output=type=tar,dest=../output/tar/{{ .DIR }}-{{ .TAG }}-{{ .ARCH | replace "/" "_" }}.tar -t test/multiarch-{{ .DIR }}:{{ .TAG }} .
+    status:
+      - test -f output/tar/{{ .DIR }}-{{ .TAG }}-{{ .ARCH | replace "/" "_" }}.tar
+
 
   bitcoind-amd64:
     desc: Build BitcoinD images - AMD64 platform
     cmds:
-      - task: buildx
+      - task: buildx-tar
         vars: 
           ARCH: "amd64"
           DIR: "{{ .BITCOIND_DIR }}"
@@ -37,7 +44,7 @@ tasks:
   bitcoind-arm64:
     desc: Build BitcoinD images - ARM64 platform
     cmds:
-      - task: buildx
+      - task: buildx-tar
         vars:
           ARCH: "arm64"
           DIR: "{{ .BITCOIND_DIR }}"
@@ -49,7 +56,7 @@ tasks:
   bitcoind-armv7:
     desc: Build BitcoinD images - ARM/V7 platform
     cmds:
-      - task: buildx
+      - task: buildx-tar
         vars:
           ARCH: "arm/v7"
           DIR: "{{ .BITCOIND_DIR }}"
@@ -60,7 +67,7 @@ tasks:
   electrs-amd64:
     desc: Build Electrs images - AMD64 platform
     cmds:
-      - task: buildx
+      - task: buildx-tar
         vars: 
           ARCH: "amd64"
           DIR: "{{ .ELECTRS_DIR }}"
@@ -71,7 +78,7 @@ tasks:
   electrs-arm64:
     desc: Build Electrs images - ARM64 platform
     cmds:
-      - task: buildx
+      - task: buildx-tar
         vars:
           ARCH: "arm64"
           DIR: "{{ .ELECTRS_DIR }}"
@@ -82,7 +89,7 @@ tasks:
   electrs-armv7:
     desc: Build Electrs images - ARM/V7 platform
     cmds:
-      - task: buildx
+      - task: buildx-tar
         vars:
           ARCH: "arm/v7"
           DIR: "{{ .ELECTRS_DIR }}"
@@ -93,7 +100,7 @@ tasks:
   tor-amd64:
     desc: Build Tor images - AMD64 platform
     cmds:
-      - task: buildx
+      - task: buildx-tar
         vars: 
           ARCH: "amd64"
           DIR: "{{ .TOR_DIR }}"
@@ -104,7 +111,7 @@ tasks:
   tor-arm64:
     desc: Build Tor images - ARM64 platform
     cmds:
-      - task: buildx
+      - task: buildx-tar
         vars:
           ARCH: "arm64"
           DIR: "{{ .TOR_DIR }}"
@@ -115,7 +122,7 @@ tasks:
   tor-armv7:
     desc: Build Tor images - ARM/V7 platform
     cmds:
-      - task: buildx
+      - task: buildx-tar
         vars:
           ARCH: "arm/v7"
           DIR: "{{ .TOR_DIR }}"
