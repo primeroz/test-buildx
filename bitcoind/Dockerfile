@@ -1,5 +1,18 @@
 ARG DEBIANTAG
 
+
+FROM debian:${DEBIANTAG} as entrypoint
+
+RUN set -ex \
+  && apt-get update -y \
+  && apt-get install -y --no-install-recommends --no-install-suggests git python3 python3-pip \
+  && git clone https://github.com/jcassee/parameterized-entrypoint.git \
+  && cd parameterized-entrypoint \
+  && pip install -r requirements.txt \
+  && python setup.py build \
+  && chmod 755 dist/entrypoint \
+  && mv dist/entrypoint /tmp
+
 FROM debian:${DEBIANTAG}
 
 LABEL maintainer.0="bigfreeze"
@@ -36,6 +49,8 @@ RUN set -ex \
         curl \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+COPY --from=entrypoint /tmp/entrypoint /usr/local/bin/entrypoint
 
 COPY docker-entrypoint.sh /entrypoint.sh
 RUN chmod a+x /entrypoint.sh

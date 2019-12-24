@@ -1,0 +1,133 @@
+---
+torrc:
+  # On startup, setuid to this user and setgid to their primary
+  # group. Effectively, the user under which Tor will run.
+  User: tord
+
+  # If 1 (true), Tor forks and daemonizes to the background. This 
+  # has no effect on Windows; instead you should use the --service
+  # command-line option. (Default: 0)
+  #RunAsDaemon: false
+
+  # Directory in which Tor working data will be kept.
+  # See: https://www.torproject.org/docs/tor-manual.html#DataDirectory
+  DataDirectory: "/var/lib/tor"
+  DataDirectoryGroupReadable: false
+
+  #CacheDirectory: "/var/lib/tor"
+  #CacheDirectoryGroupReadable: false
+
+  # See: https://www.torproject.org/docs/tor-manual.html#SocksPort
+  SocksPorts:
+    - port: 9050
+      addr: 0.0.0.0
+      flags:
+  #      - NoDNSRequest
+  #      - OnionTrafficOnly
+      isolation_flags:
+  #      - IsolateClientAddr
+  #      - IsolateSOCKSAuth
+  #      - IsolateClientProtocol
+  #      - IsolateDestPort
+  #      - IsolateDestAddr
+  #      - SessionGroup=INT
+
+  # See: https://www.torproject.org/docs/tor-manual.html#ControlPort
+  #ControlPort:
+  #  port: 9051
+  #  flags:
+  #    - GroupWritable
+  #    - WorldWritable
+  #    - RelaxDirModeCheck
+
+  #ControlSocket: "/path/to/tor-control-socket"
+
+  #ControlSocketsGroupWritable: false
+
+  # Hashed passwords to for the HashedControlPassword directive. As
+  # this directive can be supplied more than once, this key is a list.
+  # Values herein are actually passwords, so they should be encrypted.
+  #
+  # Passwords can be hashed using `tor --hash-password "password"`.
+  # They should then be encrypted with `ansible-vault encrypt_string`.
+  # The full procedure might look like this:
+  #
+  #     tor --hash-password "password" | ansible-vault encrypt_string
+  #
+  # See https://www.torproject.org/docs/tor-manual.html#HashedControlPassword
+  #HashedControlPasswords:
+  #  - "ansible-vault encrypted and tor-hashed password here"
+
+  # See https://www.torproject.org/docs/tor-manual.html#CookieAuthentication
+  #CookieAuthentication: false
+
+  # See https://www.torproject.org/docs/tor-manual.html#CookieAuthFile
+  #CookieAuthFile: "/path/to/tor-auth-cookie"
+
+  # See https://www.torproject.org/docs/tor-manual.html#ControlPortWriteToFile
+  #ControlPortWriteToFile: "/path/to/file"
+
+# Vanguards is a Tor controller add-on that implements numerous Onion
+# service defenses ahead of their implementation in Tor-core. For more
+# information, see the project development page:
+#
+#     https://github.com/mikeperry-tor/vanguards/#readme
+#
+# These options are intended for Onions which require the highest
+# possible level of security as soon as possible.
+#tor_onion_services_vanguards:
+#  version: "v0.2.2" # Git branch, tag, or commit hash to checkout.
+#  # The `args` dict is required even if it's left empty (no args).
+#  args: # Command-line arguments to pass to the Vanguards script.
+#    config: "/etc/tor/vanguards.conf"
+#    disable_vanguards: false
+#    disable_bandguards: true
+#    enable_cbtverify: true
+#  config: # Configuration file options.
+#    control_ip: "{{ inventory_hostname }}"
+#    control_port: "{{ torrc.ControlPort.port }}"
+#    control_socket: "{{ torrc.ControlSocket }}"
+#    control_pass: "{{ torrc.HashedControlPasswords[0] }}"
+#    loglevel: NOTICE
+#    logfile: "/var/log/tor/vanguards.log"
+#    state_file: vanguards.state
+#    rend_use_max_consensus_weight_churn: 1.0
+#    rend_close_circuits_on_overuse: true
+#    rend_use_global_start_count: 1000
+#    rend_use_relay_start_count: 100
+#    rend_use_scale_at_count: 20000
+
+# Define the Onion services you want available on the managed host.
+onion_services:
+  - name: bitcoin_rpc
+    version: 2
+    virtports:
+      - port_number: 8332
+        target_addr: bitcoind
+        target_port: 8332
+    auth_type: false
+    Publish: true
+    DirGroupReadable: true
+
+#  # This Onion service is used primarily for NAT punching.
+#  - name: onion-ssh # The name of the Onion service directory.
+#    version: 2      # The Onion service protocol version.
+#    virtports:      # The virtual port(s) to expose on the Onion.
+#      - port_number: 22        # Port to open on public Onion side.
+#        target_addr: 127.0.0.1 # The target address of the service.
+#        target_port: 22        # The target port of the service.
+#    auth_type: stealth     # The Onion's authentication type. This
+#                           # can be `stealth`, `basic`, or `false`.
+#    clients:        # A list of clients to authenticate.
+#      - admin
+#    Publish: true   # See `PublishHidServDescriptors`
+#    DirGroupReadable: false
+#    NumIntroductionPoints: 3
+#    MaxStreams: 0
+#    MaxStreamsCloseCircuit: false
+#    AllowUnknownPorts: false
+#    RendPostPeriod:
+#      n: 1
+#      unit: hour
+
+

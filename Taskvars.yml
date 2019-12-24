@@ -22,5 +22,5 @@ ELECTRS_TAG: "0.8.1-rc0"
 # TOR Image Vars
 # git ls-remote --tags https://git.torproject.org/tor.git | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1
 TOR_DIR: "tor"
-TOR_VERSION: "0.4.1.6"
-TOR_TAG: "0.4.1.6-rc0"
+TOR_VERSION: "0.4.2.5"
+TOR_TAG: "0.4.2.5-rc0"

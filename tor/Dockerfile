@@ -1,4 +1,17 @@
 ARG DEBIANTAG
+
+FROM debian:${DEBIANTAG} as entrypoint
+
+RUN set -ex \
+  && apt-get update -y \
+  && apt-get install -y --no-install-recommends --no-install-suggests git python3 python3-pip python3-setuptools python3-wheel python3-dev binutils \
+  && git clone https://github.com/bigfreeze-code/parameterized-entrypoint.git \
+  && cd parameterized-entrypoint \
+  && pip3 install -r requirements.txt \
+  && python3 setup.py build \
+  && chmod 755 dist/entrypoint \
+  && mv dist/entrypoint /tmp
+
 FROM debian:${DEBIANTAG}
 MAINTAINER "bigfreeze"
 
@@ -49,9 +62,10 @@ ENV ETCDIR=/tmp/tor
 ENV DATADIR=/var/lib/tor
 ENV CONTROLDIR=/run/tor
 
-COPY docker-entrypoint.sh /entrypoint.sh
-RUN chmod a+x /entrypoint.sh
+COPY --from=entrypoint /tmp/entrypoint /usr/local/bin/entrypoint
 
+COPY /templates /templates
+COPY /variables.yml /
 COPY /docker-entrypoint.d/* /docker-entrypoint.d/
 RUN chmod a+x /docker-entrypoint.d/*
 
@@ -63,5 +77,5 @@ VOLUME $DATADIR
 #EXPOSE 9001 9030 9050 54444 7002
 EXPOSE 9050 9051
 
-ENTRYPOINT ["/entrypoint.sh"]
-CMD ["tor", "-f", "${ETCDIR}/torrc"]
+ENTRYPOINT ["/usr/local/bin/entrypoint"]
+CMD ["--scripts", "/docker-entrypoint.d", "--", "tor", "-f", "/etc/tor/torrc"]
