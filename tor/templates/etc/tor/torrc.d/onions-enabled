@@ -9,7 +9,7 @@
         https://stackoverflow.com/a/47418461
 -#}
 {%- for item in onion_services %}
-HiddenServiceDir {{ torrc.DataDirectory | default('/var/lib/tor') }}/onion-services/{{ item.name }}
+HiddenServiceDir {{ torrc_DataDirectory | default('/var/lib/tor') }}/onion-services/{{ item.name }}
 {%- for virtport in item.virtports %}
 HiddenServicePort {{ virtport.port_number }}{% if virtport.target_addr is defined or virtport.target_port is defined %} {{ virtport.target_addr | default('127.0.0.1') }}{% if virtport.target_port is defined %}:{{ virtport.target_port | default(virtport.port_number) }}{% endif %}{% elif virtport.unix_socket is defined %} unix:{{ virtport.unix_socket }}{% endif %}{{''}}
 {%- endfor %}

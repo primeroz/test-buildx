@@ -12,14 +12,19 @@ tasks:
       - docker buildx use mybuilder
       - mkdir -p ./output
 
-  cleanup:
+  cleanup-buildx:
     desc: Cleanup buildx mybuilder
     cmds:
       - docker buildx rm mybuilder
 
+  cleanup-builds:
+    desc: Cleanup builds
+    cmds:
+      - find ./output -type f -delete
+
   buildx-docker:
     cmds:
-      - cd {{ .DIR }} && docker buildx build --platform linux/{{ .ARCH }} -f Dockerfile {{ .BUILD_ARGS }} --build-arg DEBIANTAG={{ .DEBIANTAG }} --progress=plain --output=type=docker,dest=../output/docker/{{ .DIR }}-{{ .TAG }}-{{ .ARCH | replace "/" "_" }}.tar -t test/multiarch-{{ .DIR }}:{{ .TAG }} .
+      - cd {{ .DIR }} && docker buildx build --platform linux/{{ .ARCH }} -f Dockerfile {{ .BUILD_ARGS }} --build-arg ENTRYPOINT_VERSION={{ .ENTRYPOINT_VERSION}} --build-arg ENTRYPOINT_ARCH={{  .ARCH | replace "/" "" }} --build-arg DEBIANTAG={{ .DEBIANTAG }} --progress=plain --output=type=docker,dest=../output/docker/{{ .DIR }}-{{ .TAG }}-{{ .ARCH | replace "/" "_" }}.tar -t test/multiarch-{{ .DIR }}:{{ .TAG }} .
     status:
       - test -f output/docker/{{ .DIR }}-{{ .TAG }}-{{ .ARCH | replace "/" "_" }}.tar
 

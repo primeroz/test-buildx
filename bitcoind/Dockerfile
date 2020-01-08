@@ -1,24 +1,13 @@
 ARG DEBIANTAG
 
-
-FROM debian:${DEBIANTAG} as entrypoint
-
-RUN set -ex \    
-  && apt-get update -y \
-  && apt-get install -y --no-install-recommends --no-install-suggests git python3 python3-pip python3-setuptools python3-wheel python3-dev binutils build-essential libz-dev \
-  && git clone https://github.com/bigfreeze-code/parameterized-entrypoint.git \
-  && cd parameterized-entrypoint \
-  && pip3 install -r requirements.txt \
-  && python3 setup.py build \
-  && chmod 755 dist/entrypoint \
-  && mv dist/entrypoint /tmp
-
 FROM debian:${DEBIANTAG}
 
 LABEL maintainer.0="bigfreeze"
 
 ARG BITCOIND_VERSION
 ARG BIN_ARG_SUFFIX
+ARG ENTRYPOINT_VERSION
+ARG ENTRYPOINT_ARCH
 ENV BITCOIN_DATA=/home/bitcoin/.bitcoin
 ENV PATH=/opt/bitcoin-${BITCOIND_VERSION}/bin:$PATH
 
@@ -50,18 +39,21 @@ RUN set -ex \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-COPY --from=entrypoint /tmp/entrypoint /usr/local/bin/entrypoint
-
-COPY docker-entrypoint.sh /entrypoint.sh
-RUN chmod a+x /entrypoint.sh
+RUN set -ex \
+  && apt-get update -y \
+  && apt-get install -y --no-install-recommends --no-install-suggests curl ca-certificates \
+  && curl -SLo /entrypoint https://github.com/bigfreeze-code/parameterized-entrypoint/releases/download/${ENTRYPOINT_VERSION}/entrypoint_${ENTRYPOINT_ARCH} \
+  && chmod a+x /entrypoint \
+  && apt-get purge --auto-remove -y \
+        curl \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY /docker-entrypoint.d/* /docker-entrypoint.d/
 RUN chmod a+x /docker-entrypoint.d/*
 
-VOLUME ["/home/bitcoin/.bitcoin"]
-
 EXPOSE 8332 8333 18332 18333 18443 18444
 
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/entrypoint"]
 
-CMD ["bitcoind"]
+CMD ["--scripts", "/docker-entrypoint.d", "--", "echo", "gosu", "bitcoind:bitcoind", "-disablewallet", "-pid=/run/bitcoind/bitcoind.pid", "-conf=${BITCOIN_DATA}/bitcoin.conf", "-datadir=${BITCOIN_DATA}]

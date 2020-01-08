@@ -1,0 +1,35 @@
+---
+# Define the Onion services you want available on the managed host.
+onion_services:
+  - name: bitcoin_rpc
+    version: 2
+    virtports:
+      - port_number: 8332
+        target_addr: bitcoind
+        target_port: 8332
+    auth_type: false
+    Publish: true
+    DirGroupReadable: true
+#
+#  # This Onion service is used primarily for NAT punching.
+#  - name: onion-ssh # The name of the Onion service directory.
+#    version: 2      # The Onion service protocol version.
+#    virtports:      # The virtual port(s) to expose on the Onion.
+#      - port_number: 22        # Port to open on public Onion side.
+#        target_addr: 127.0.0.1 # The target address of the service.
+#        target_port: 22        # The target port of the service.
+#    auth_type: stealth     # The Onion's authentication type. This
+#                           # can be `stealth`, `basic`, or `false`.
+#    clients:        # A list of clients to authenticate.
+#      - admin
+#    Publish: true   # See `PublishHidServDescriptors`
+#    DirGroupReadable: false
+#    NumIntroductionPoints: 3
+#    MaxStreams: 0
+#    MaxStreamsCloseCircuit: false
+#    AllowUnknownPorts: false
+#    RendPostPeriod:
+#      n: 1
+#      unit: hour
+
+

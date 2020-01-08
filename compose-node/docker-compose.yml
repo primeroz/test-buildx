@@ -2,30 +2,16 @@ version: "3.7"
                                      
 services:        
   tor:                                                                     
-    image: test/multiarch-tor:0.4.1.6-rc0
+    image: test/multiarch-tor:0.4.2.5-rc0
     #build:                 
       #context: tor                   
     networks: 
-        node:
+        main:
           ipv4_address: 172.28.7.10
-    environment: 
-      # Enable Socks proxy on 9050
-      SOCKSPORT: "9050"
-                                     
-      # Set mapping ports
-      RPC_TOR_SERVICE_HOSTS: "8332 bitcoind:8332"
-      RPC_TOR_SERVICE_VERSION: 2
-      REST_TOR_SERVICE_HOSTS: "8333 bitcoind:8333"
-      REST_TOR_SERVICE_VERSION: 2
-    entrypoint:
-      - /entrypoint.sh
-    command:
-      - tor
-      - -f
-      - /tmp/tor/torrc
     # Keep keys in volumes
     volumes:
-      - tor_hidden_services:/var/lib/tor/hidden_service/
+      - ./tor.yml:/variables.yml:ro
+      - tor_hidden_services:/var/lib/tor/onion-services/
       - tor_run_tor:/run/tor
 
   bitcoind:      
@@ -36,7 +22,7 @@ services:
       - tor  
     #network_mode: container:tor
     networks: 
-        node:
+       main:
           ipv4_address: 172.28.7.20
     environment:                                                           
       BITCOIN_DATA: /home/bitcoin/.bitcoin
@@ -46,6 +32,7 @@ services:
     #command: "\"tor:9050\" -- /entrypoint.sh bitcoind"
     volumes:
       - bitcoind_data:/home/bitcoin/.bitcoin
+      - tor_hidden_services:/run/tor_hidden_services:ro
       - tor_run_tor:/run/tor:ro
 
 
@@ -59,7 +46,7 @@ volumes:
     driver: local
 
 networks:
-  node:
+  main:
    ipam:
      config:
        - subnet: 172.28.7.0/24
