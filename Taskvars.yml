@@ -5,8 +5,10 @@ ENTRYPOINT_VERSION: "v0.11.5"
 BINFMTSHA: 66f9012c56a8316f9244ffd7622d7c21c1f6f28d
 
 # Debian TAG
-DEBIANTAG: buster-20191118-slim
+DEBIANTAG: buster-20200130-slim
 # ALPINE TAG
+
+PLATFORMS: linux/amd64,linux/arm64,linux/arm/v7
 
 # BASE Image Vars
 BASE_DIR: "base"
@@ -15,15 +17,15 @@ BASE_TAG: "butster-r0"
 # BITCOIND Image Vars
 BITCOIND_DIR: "bitcoind"
 BITCOIND_VERSION: "0.19.0.1"
-BITCOIND_TAG: "0.19.0.1-rc0"
+BITCOIND_TAG: "0.19.0.1-test0"
 
 # ELECTRS Image Vars
 ELECTRS_DIR: "electrs"
-ELECTRS_VERSION: "0.8.1"
-ELECTRS_TAG: "0.8.1-rc0"
+ELECTRS_VERSION: "0.8.3"
+ELECTRS_TAG: "0.8.3-test0"
 
 # TOR Image Vars
 # git ls-remote --tags https://git.torproject.org/tor.git | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1
 TOR_DIR: "tor"
-TOR_VERSION: "0.4.2.5"
-TOR_TAG: "0.4.2.5-rc0"
+TOR_VERSION: "0.4.2.6"
+TOR_TAG: "0.4.2.6-test0"

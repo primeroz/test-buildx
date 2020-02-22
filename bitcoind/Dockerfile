@@ -2,12 +2,12 @@ ARG DEBIANTAG
 
 FROM debian:${DEBIANTAG}
 
-LABEL maintainer.0="bigfreeze"
+LABEL maintainer.0="primeroz"
 
 ARG BITCOIND_VERSION
-ARG BIN_ARG_SUFFIX
 ARG ENTRYPOINT_VERSION
-ARG ENTRYPOINT_ARCH
+ARG TARGETPLATFORM
+ARG TARGETARCH
 ENV BITCOIN_DATA=/home/bitcoin/.bitcoin
 ENV PATH=/opt/bitcoin-${BITCOIND_VERSION}/bin:$PATH
 
@@ -26,6 +26,9 @@ RUN set -ex \
       gpg --batch --keyserver ha.pool.sks-keyservers.net --recv-keys "$key" || \
       gpg --batch --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys "$key" ; \
     done \
+  && if [ "x$TARGETARCH" = "xarm" ]; then export BIN_ARG_SUFFIX=arm-linux-gnueabihf; fi \
+  && if [ "x$TARGETARCH" = "xarm64" ]; then export BIN_ARG_SUFFIX=aarch64-linux-gnu; fi \
+  && if [ "x$TARGETARCH" = "xamd64" ]; then export BIN_ARG_SUFFIX=x86_64-linux-gnu; fi \
   && curl -SLO https://bitcoin.org/bin/bitcoin-core-${BITCOIND_VERSION}/SHA256SUMS.asc \
   && curl -SLO https://bitcoin.org/bin/bitcoin-core-${BITCOIND_VERSION}/bitcoin-${BITCOIND_VERSION}-${BIN_ARG_SUFFIX}.tar.gz \
   && gpg --verify SHA256SUMS.asc \
@@ -42,6 +45,9 @@ RUN set -ex \
 RUN set -ex \
   && apt-get update -y \
   && apt-get install -y --no-install-recommends --no-install-suggests curl ca-certificates \
+  && if [ "x$TARGETARCH" = "xarm" ]; then export ENTRYPOINT_ARCH=armv7l; fi \
+  && if [ "x$TARGETARCH" = "xarm64" ]; then export ENTRYPOINT_ARCH=arm64; fi \
+  && if [ "x$TARGETARCH" = "xamd64" ]; then export ENTRYPOINT_ARCH=x86_64; fi \
   && curl -SLo /entrypoint https://github.com/bigfreeze-code/parameterized-entrypoint/releases/download/${ENTRYPOINT_VERSION}/entrypoint_${ENTRYPOINT_ARCH} \
   && chmod a+x /entrypoint \
   && apt-get purge --auto-remove -y \

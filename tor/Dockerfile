@@ -4,14 +4,13 @@ FROM debian:${DEBIANTAG}
 MAINTAINER "bigfreeze"
 
 ARG ENTRYPOINT_VERSION
-ARG ENTRYPOINT_ARCH   
+ARG TARGETPLATFORM
+ARG TARGETARCH
 
 ENV GPGKEY=A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89
 ENV APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE="True"
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Set a default Nickname
-ENV TOR_NICKNAME=Tor4
 ENV TOR_USER=tord
 ENV TERM=xterm
 ENV DATADIR=/var/lib/tor
@@ -54,6 +53,9 @@ RUN apt-get update \
 RUN set -ex \
   && apt-get update -y \
   && apt-get install -y --no-install-recommends --no-install-suggests curl ca-certificates \
+  && if [ "x$TARGETARCH" = "xarm" ]; then export ENTRYPOINT_ARCH=armv7l; fi \
+  && if [ "x$TARGETARCH" = "xarm64" ]; then export ENTRYPOINT_ARCH=arm64; fi \
+  && if [ "x$TARGETARCH" = "xamd64" ]; then export ENTRYPOINT_ARCH=x86_64; fi \
   && curl -SLo /entrypoint https://github.com/bigfreeze-code/parameterized-entrypoint/releases/download/${ENTRYPOINT_VERSION}/entrypoint_${ENTRYPOINT_ARCH} \
   && chmod a+x /entrypoint \
   && apt-get purge --auto-remove -y \
@@ -62,7 +64,7 @@ RUN set -ex \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY /templates /templates
-COPY /defaults.yml /
+COPY /configs/defaults.yml /
 COPY /docker-entrypoint.d/* /docker-entrypoint.d/
 RUN chmod a+x /docker-entrypoint.d/*
 
