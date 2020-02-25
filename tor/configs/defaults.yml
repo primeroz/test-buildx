@@ -92,7 +92,7 @@ torrc_SocksPorts:
 #    rend_use_scale_at_count: 20000
 
 # Define the Onion services you want available on the managed host.
-#onion_services:
+onion_services: {}
 #  # This Onion service is used primarily for NAT punching.
 #  - name: onion-ssh # The name of the Onion service directory.
 #    version: 2      # The Onion service protocol version.

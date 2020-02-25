@@ -67,6 +67,8 @@ COPY /templates /templates
 COPY /configs/defaults.yml /
 COPY /docker-entrypoint.d/* /docker-entrypoint.d/
 RUN chmod a+x /docker-entrypoint.d/*
+RUN mkdir -p /etc/tor/torrc_d/onions-enabled \
+    && chown tord:tord /etc/tor/torrc_d/onions-enabled
 
 # Persist data
 # VOLUME /etc/tor /var/lib/tor /run/tor
