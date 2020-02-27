@@ -1,0 +1,6 @@
+torrc_ControlPort:
+  port: 9051
+  addr: 127.0.0.1
+torrc_CookieAuthentication: true
+torrc_CookieAuthFile: "/var/lib/tor/tor-auth-cookie"
+

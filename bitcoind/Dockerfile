@@ -62,4 +62,4 @@ EXPOSE 8332 8333 18332 18333 18443 18444
 
 ENTRYPOINT ["/entrypoint"]
 
-CMD ["--scripts", "/docker-entrypoint.d", "--", "echo", "gosu", "bitcoind:bitcoind", "-disablewallet", "-pid=/run/bitcoind/bitcoind.pid", "-conf=${BITCOIN_DATA}/bitcoin.conf", "-datadir=${BITCOIN_DATA}]
+CMD ["--scripts", "/docker-entrypoint.d", "--", "gosu", "bitcoin:bitcoin", "bitcoind", "-disablewallet", "-pid=/run/bitcoind/bitcoind.pid", "-conf={{ BITCOIN_DATA }}/bitcoin.conf", "-datadir={{ BITCOIN_DATA }}"]

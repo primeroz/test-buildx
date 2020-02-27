@@ -17,7 +17,7 @@ BASE_TAG: "butster-r0"
 # BITCOIND Image Vars
 BITCOIND_DIR: "bitcoind"
 BITCOIND_VERSION: "0.19.0.1"
-BITCOIND_TAG: "0.19.0.1-test0"
+BITCOIND_TAG: "0.19.0.1-test6"
 
 # ELECTRS Image Vars
 ELECTRS_DIR: "electrs"

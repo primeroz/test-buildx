@@ -1,0 +1,87 @@
+version: '2'
+
+tasks:
+  .pod-create:
+    desc: Create POD template task
+    cmds:
+      - podman pod create 
+        --infra={{ default "true" .INFRA }} 
+        {{ default "" .LABELS }} 
+        {{ default "" .PUBLISHPORTS }} 
+        --name={{ .PODNAME }} 
+
+  .container-in-pod-create:
+    desc: Create Container in POD template task
+    cmds:
+      - podman container create
+          --pod={{ .PODNAME }} 
+           --add-host={{ default "host:10.88.0.1" .HOST }}
+           {{ default "" .ANNOTATIONS }} 
+           {{ default "" .LABELS }} 
+           --blkio-weight={{ default "100" .BLKIOWEIGHT }} 
+           --cpu-shares={{ default "1024" .CPUSHARES }} 
+           --cap-add={{ default "''" .CAPADD }} 
+           --cap-drop={{ default "all" .CAPDROP }} 
+           --detach 
+           {{ default "" .DEVICES }} 
+           {{ default "" .VOLUMES }} 
+           {{ default "" .ENVS }} 
+           {{ default "" .PUBLISHPORTS }} 
+           --read-only={{ default "true" .READONLY }} 
+           --read-only-tmpfs={{ default "true" .READONLYTMPFS }} 
+           --hostname={{ .CONTAINERNAME }} 
+           --log-driver={{ default "k8s-file" .LOGDRIVER }} 
+           --memory={{ default "0" .MEMORY }} 
+           --restart={{ default "on-failure:5" .RESTART }} 
+           --shm-size={{ default "32m" .SHMSIZE }} 
+           {{ default "" .EXTRAARGS }} 
+           --name={{ .CONTAINERNAME }} {{ .IMAGE }}
+
+  pod-core:
+    desc: Create The Core POD
+    cmds:
+    - task: .pod-create
+      vars: 
+        PODNAME: core
+        LABELS: "--label common/type=core"
+        PUBLISHPORTS: "-p 9050:9050"
+    status:
+      - podman pod exists core
+
+
+  container-tor:
+    desc: Create The Tor container
+    deps:
+      - pod-core
+    cmds:
+    - task: .container-in-pod-create
+      vars: 
+        PODNAME: core
+        CONTAINERNAME: tor
+        LABELS: "--label=common/type=core"
+        ANNOTATIONS: "--annotation=common/service=tor"
+        VOLUMES: "-v /srv/tor:/var/lib/tor:rw -v /srv/tor/configs.yml:/variables.yml:ro"
+        READONLY: "false"
+        IMAGE: "primeroz/tor:0.4.2.6-test2"
+        CAPADD: "cap_chown,cap_fowner,cap_dac_override,cap_setuid,cap_setgid"
+    status:
+      - podman container exists tor
+          
+  container-bitcoind:
+    desc: Create The bitcoind container
+    deps:
+      - pod-core
+    cmds:
+    - task: .container-in-pod-create
+      vars: 
+        PODNAME: core
+        CONTAINERNAME: bitcoind
+        LABELS: "--label=common/type=core"
+        ANNOTATIONS: "--annotation=common/service=bitcoind"
+        VOLUMES: "-v /srv/bitcoin:/home/bitcoin/.bitcoin:rw -v /srv/tor/tor-auth-cookie:/var/lib/tor/tor-auth-cookie:ro"
+        READONLY: "false"
+        IMAGE: "primeroz/bitcoind:0.19.0.1-test6"
+        CAPADD: "cap_chown,cap_fowner,cap_dac_override,cap_setuid,cap_setgid"
+    status:
+      - podman container exists bitcoind
+          
